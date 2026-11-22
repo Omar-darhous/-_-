@@ -1,5 +1,5 @@
 const cachePrefix = 'sadaqah-shell-' + self.registration.scope + '-';
-const shell = cachePrefix + '3';
+const shell = cachePrefix + '4';
 const assets = ['./', 'index.html', 'app.js', 'data.js', 'prayer.js', 'extra-azkar.js',
   'style.css', 'install.js', 'manifest.webmanifest', 'icon.svg', 'icon-180.png', 'icon-192.png', 'icon-512.png'];
 self.addEventListener('install', event => {
