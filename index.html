@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#123e35"><meta name="description" content="القرآن الكريم وأذكار وأدعية — صدقة جارية على أرواح أحبتنا"><title>صدقة جارية | القرآن الكريم والأذكار</title><link rel="icon" href="icon.svg"><link rel="stylesheet" href="style.css"><link rel="manifest" href="./manifest.webmanifest"><link rel="apple-touch-icon" href="./icon-180.png"></head>
+<body>
+<header><a class="brand" href="#home"><span class="brand-icon">۞</span><span>صدقة جارية<small>نورٌ يبقى، وأثرٌ لا ينقطع</small></span></a><nav aria-label="القائمة الرئيسية"><button data-page="home" class="active">الرئيسية</button><button data-page="quran">القرآن الكريم</button><button data-page="azkar">الأذكار</button><button data-page="dua">الأدعية</button><button data-page="tasbih">المسبحة</button><button data-page="prayer">مواقيت الصلاة</button><button data-page="qibla">القبلة</button></nav><button id="theme" class="icon-button" aria-label="تبديل الوضع الليلي">◐</button></header>
+<main id="main"></main>
+<dialog id="reset-dialog" aria-labelledby="reset-title" aria-describedby="reset-desc">
+<h2 id="reset-title">تصفير المسبحة؟</h2>
+<p id="reset-desc">هتبدأ عدّ جديد من الصفر.</p>
+<div><button id="cancel-reset" class="secondary" autofocus>إلغاء</button> <button id="accept-reset" class="primary">تصفير العداد</button></div>
+</dialog>
+<dialog id="install-help" aria-labelledby="install-title"><h2 id="install-title">تثبيت صدقة جارية</h2><p>على iPhone أو iPad افتح التطبيق في Safari، ثم اختر مشاركة ← إضافة إلى الشاشة الرئيسية.</p><p>على Android أو الكمبيوتر افتح قائمة Chrome أو Edge واختر تثبيت التطبيق إذا ظهر الخيار.</p><p id="offline-note">افتح المصحف مرة بالإنترنت لحفظ نصه على جهازك. التلاوة تحتاج إلى اتصال.</p><button class="primary" id="close-install">إغلاق</button></dialog><footer><button class="secondary" id="install-app">تثبيت التطبيق</button><span class="footer-mark">۞</span><strong>اللهم اجعل لهم من كل حرفٍ يُقرأ نورًا</strong><p>صدقة جارية على أرواح أحبتنا، نسأل الله أن يتقبلها ويرحمهم.</p></footer>
+<section id="player" class="player" hidden aria-label="مشغل التلاوة"><div><strong id="audio-title"></strong><small>مشاري راشد العفاسي</small></div><audio id="audio" controls preload="none"></audio><button id="stop-audio" class="icon-button" aria-label="إغلاق التلاوة">✕</button><span id="audio-error" role="status"></span></section>
+<div id="toast" role="status"></div><script type="module" src="app.js"></script>
+<script type="module" src="./install.js"></script></body></html>
