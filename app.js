@@ -28,9 +28,62 @@ function route(p){location.hash=p;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)route(b.dataset.page);});
 async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
 function showIndex(){$('#main').innerHTML=heading('القرآن الكريم','١١٤ سورة · بالرسم العثماني')+`${bookmark?`<button class="resume" id="resume">▤ متابعة القراءة من ${esc(bookmark.name)} · الآية ${num(bookmark.ayah)}</button>`:''}<label class="search"><span>⌕</span><input id="search" type="search" placeholder="ابحث باسم السورة أو رقمها…" aria-label="ابحث باسم السورة أو رقمها"></label><div id="surahs" class="surah-grid"></div>`;if(bookmark)$('#resume').onclick=()=>route(`quran/${bookmark.surah}/${bookmark.ayah}`);const draw=()=>{const query=normalize($('#search').value.trim());const filtered=quran.filter(s=>normalize(s.name).includes(query)||String(s.number)===query||num(s.number)===query);$('#surahs').innerHTML=filtered.length?filtered.map(s=>`<a class="surah-card" href="#quran/${s.number}"><span class="surah-number">${num(s.number)}</span><div><h3>${esc(s.name)}</h3><small>${s.revelationType==='Meccan'?'مكية':'مدنية'} · ${num(s.ayahs.length)} آية</small></div><span class="muted">جزء ${num(s.ayahs[0].juz)}</span></a>`).join(''):'<p class="empty">لا توجد سورة بهذا الاسم أو الرقم.</p>';};$('#search').oninput=draw;draw();}
-function showSurah(n,target){const s=quran[n-1];$('#main').innerHTML=`<div class="reader-toolbar"><button class="secondary" data-page="quran">فهرس السور</button><label>حجم الخط <input id="font" type="range" min="24" max="48" value="${font}"></label><button class="primary" id="play-surah">استماع للسورة ▷</button></div><section class="reader" style="--quran-size:${font}px"><div class="surah-title"><span>۞</span><h1>${esc(s.name)}</h1><p>${s.revelationType==='Meccan'?'مكية':'مدنية'} · ${num(s.ayahs.length)} آية</p></div><div class="verses">${s.ayahs.map(a=>`<article class="verse ${target===a.numberInSurah?'selected':''}" id="ayah-${a.numberInSurah}"><p>${esc(a.text)} <span class="verse-number">﴿${num(a.numberInSurah)}﴾</span></p><div class="verse-actions"><button data-save="${a.numberInSurah}" aria-label="حفظ موضع الآية ${a.numberInSurah}">حفظ الموضع</button><button data-play="${a.numberInSurah}" aria-label="استماع للآية ${a.numberInSurah}">▷ استماع</button><small>جزء ${num(a.juz)} · صفحة ${num(a.page)}</small></div></article>`).join('')}</div></section><div class="reader-nav">${n>1?`<a class="secondary" href="#quran/${n-1}">السورة السابقة</a>`:'<span></span>'}${n<114?`<a class="primary" href="#quran/${n+1}">السورة التالية</a>`:''}</div>`;$('#font').oninput=e=>{font=Number(e.target.value);$('.reader').style.setProperty('--quran-size',font+'px');save('font',font);};$('#play-surah').onclick=()=>play(n,1);document.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>play(n,Number(b.dataset.play)));document.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{bookmark={surah:n,ayah:Number(b.dataset.save),name:s.name};toast(save('bookmark',bookmark)?'تم حفظ موضع القراءة':'تعذّر الحفظ على هذا المتصفح');document.querySelectorAll('.verse').forEach(v=>v.classList.toggle('selected',v.id===`ayah-${bookmark.ayah}`));});if(target)requestAnimationFrame(()=>document.getElementById(`ayah-${target}`)?.scrollIntoView({block:'center'}));}
-function play(n,a){const surah=quran[n-1],ayah=surah.ayahs[a-1];if(!ayah)return;playing={n,a};$('#player').hidden=false;$('#audio-error').textContent='';$('#audio-title').textContent=`${surah.name} · الآية ${num(a)}`;$('#audio').src=`https://cdn.islamic.network/quran/audio/128/ar.alafasy/${ayah.number}.mp3`;$('#audio').play().catch(()=>{$('#audio-error').textContent='تعذّر التشغيل التلقائي. اضغط تشغيل، وتحقق من الإنترنت.';});}
-$('#audio').onended=()=>{if(playing&&playing.a<quran[playing.n-1].ayahs.length)play(playing.n,playing.a+1);else playing=null;};$('#audio').onerror=()=>{$('#audio-error').textContent='تعذّر تحميل التلاوة. تحقق من اتصال الإنترنت ثم أعد المحاولة.';};$('#stop-audio').onclick=()=>{$('#audio').pause();$('#audio').removeAttribute('src');$('#audio').load();$('#player').hidden=true;playing=null;};
+function showSurah(n, target) {
+  const surah = quran[n - 1];
+  const current = surah.ayahs[target - 1] || surah.ayahs[0];
+  const page = current.page;
+  const sections = [];
+  let previous, next;
+  for (const chapter of quran) {
+    const verses = chapter.ayahs.filter(verse => verse.page === page);
+    if (verses.length) sections.push({chapter, verses});
+    for (const verse of chapter.ayahs) {
+      if (verse.page === page - 1 && !previous) previous = [chapter.number, verse.numberInSurah];
+      if (verse.page === page + 1 && !next) next = [chapter.number, verse.numberInSurah];
+    }
+  }
+  const link = (point, label) => point ? `<a class="secondary" href="#quran/${point.join('/')}">${label}</a>` : '<span></span>';
+  $('#main').innerHTML = `<div class="reader-toolbar"><button class="secondary" data-page="quran">فهرس السور</button>
+    <label>حجم الخط <input id="font" type="range" min="24" max="48" value="${font}"></label>
+    <button class="secondary" id="save-page">حفظ موضع القراءة</button></div>
+    <section class="reader" style="--quran-size:${font}px;border:4px double var(--gold)">
+    <div class="section-title"><small>الجزء ${num(current.juz)}</small><small>صفحة ${num(page)}</small></div>
+    ${sections.map(({chapter, verses}) => `<section><div class="surah-title"><h2>${esc(chapter.name)}</h2>
+      <button class="secondary" data-listen="${chapter.number}">استماع للسورة كاملة ▷</button></div>
+      <p style="font:var(--quran-size)/2.15 Amiri,'Traditional Arabic',serif;text-align:justify">
+      ${verses.map(a => `<span id="verse-${chapter.number}-${a.numberInSurah}">${esc(a.text)} <span class="verse-number">﴿${num(a.numberInSurah)}﴾</span></span>`).join(' ')}
+      </p></section>`).join('')}
+    <div style="text-align:center">${num(page)}</div></section>
+    <div class="reader-nav">${link(previous,'الصفحة السابقة')}${link(next,'الصفحة التالية')}</div>`;
+  $('#font').oninput = event => {
+    font = Number(event.target.value);
+    $('.reader').style.setProperty('--quran-size', font + 'px');
+    save('font', font);
+  };
+  $('#save-page').onclick = () => {
+    bookmark = {surah:n, ayah:current.numberInSurah, name:surah.name};
+    toast(save('bookmark', bookmark) ? 'تم حفظ موضع القراءة' : 'تعذّر حفظ الموضع');
+  };
+  document.querySelectorAll('[data-listen]').forEach(button => {
+    button.onclick = () => play(Number(button.dataset.listen));
+  });
+  if (target > 1) document.getElementById('verse-'+n+'-'+target)?.scrollIntoView({block:'center'});
+}
+function play(number) {
+  const audio = $('#audio');
+  $('#player').hidden = false;
+  $('#audio-error').textContent = '';
+  $('#audio-title').textContent = quran[number - 1].name;
+  if (playing !== number) {
+    playing = number;
+    audio.src = 'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/' + number + '.mp3';
+  }
+  audio.play().catch(error => {
+    if (error.name !== 'AbortError' && playing === number) $('#audio-error').textContent = 'تعذّر تشغيل السورة. تحقّق من الاتصال وأعد المحاولة.';
+  });
+}
+
+$('#audio').onerror=()=>{$('#audio-error').textContent='تعذّر تحميل التلاوة. تحقق من اتصال الإنترنت ثم أعد المحاولة.';};$('#stop-audio').onclick=()=>{$('#audio').pause();$('#audio').removeAttribute('src');$('#audio').load();$('#player').hidden=true;playing=null;};
 function azkarView(){return heading('أذكارك اليومية','اذكر الله بقلبٍ حاضر، وعلى مهل.')+`<div class="tabs">${Object.keys(azkar).map(c=>`<button data-category="${c}" class="${category===c?'active':''}">${c}</button>`).join('')}</div>${['أذكار الصباح','أذكار المساء'].includes(category) ? '<p style="text-align:center"><a class="secondary" target="_blank" rel="noopener" href="https://misrquran.gov.eg/audio-details/27d24084-fe27-494d-b294-9cf3f6810088">استمع للأذكار بصوت فوزي عبد المقصود على موقع الإذاعة</a></p>' : ''}<div class="azkar-list">${azkar[category].map((z,i)=>{const count=counts[category+i]||0;return `<article class="content-card dhikr"><div><p class="arabic">${z.text}</p><small>${z.source}</small></div><button class="count ${z.target&&count>=z.target?'complete':''}" data-count="${i}" ${z.target&&count>=z.target?'disabled':''}><strong>${num(count)}</strong><span>${z.target?'من '+num(z.target):'ذكر حر'}</span></button></article>`;}).join('')}</div><button class="secondary" id="reset-azkar">بدء العد من جديد</button>`;}
 function bindAzkar(){document.querySelectorAll('[data-category]').forEach(b=>b.onclick=()=>{category=b.dataset.category;$('#main').innerHTML=azkarView();bindAzkar();});document.querySelectorAll('[data-count]').forEach(b=>b.onclick=()=>{const i=Number(b.dataset.count),key=category+i,z=azkar[category][i];counts[key]=(counts[key]||0)+1;b.querySelector('strong').textContent=num(counts[key]);if(z.target&&counts[key]>=z.target){b.disabled=true;b.classList.add('complete');}});$('#reset-azkar').onclick=()=>{azkar[category].forEach((_,i)=>delete counts[category+i]);$('#main').innerHTML=azkarView();bindAzkar();};}
 function tasbihView(){return heading('المسبحة الإلكترونية','أَلَا بِذِكْرِ اللَّهِ تَطْمَئِنُّ الْقُلُوبُ — الرعد: ٢٨')+`<section class="tasbih"><span class="eyebrow">ذكرٌ يطمئن به القلب</span><h2>سُبْحَانَ اللَّهِ وَبِحَمْدِهِ</h2><button id="tasbih-count" aria-label="زيادة عداد التسبيح"><strong>${num(tasbih)}</strong><span>اضغط للتسبيح</span></button><p>عداد حر، يُحفظ على هذا الجهاز</p><button class="secondary" id="reset-tasbih">تصفير العداد</button></section>`;}
