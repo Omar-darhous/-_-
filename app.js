@@ -8,8 +8,14 @@ const read=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))??d;}catch{retu
 const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true;}catch{return false;}};
 let quran=null,loading=null,page='home',category='بعد الصلاة',counts={},font=Number(read('font',30))||30,playing=null;
 let bookmark=read('bookmark',null),tasbih=Number(read('tasbih',0))||0;
-document.documentElement.dataset.theme=read('theme','light');
-$('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';document.documentElement.dataset.theme=t;save('theme',t);};
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const label = theme === 'dark' ? 'التبديل إلى المظهر الأبيض' : 'التبديل إلى المظهر الأخضر';
+  $('#theme').setAttribute('aria-label', label);
+  $('#theme').title = label;
+}
+applyTheme(read('theme', 'dark') === 'light' ? 'light' : 'dark');
+$('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';applyTheme(t);save('theme',t);};
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),3000);}
 const icons={book:'▤',azkar:'☼',dua:'♡',tasbih:'◉'};
 function heading(title,sub){return `<div class="page-heading"><span class="eyebrow">وَاذْكُر رَّبَّكَ كَثِيرًا</span><h1>${title}</h1><p>${sub}</p></div>`;}
