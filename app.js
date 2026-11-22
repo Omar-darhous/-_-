@@ -23,7 +23,65 @@ function home(){return `<section class="hero"><div class="hero-copy"><span class
 <section class="dedication"><span class="dedication-symbol">♡</span><div><span class="eyebrow">اللهم ارحم من اشتاقت لهم أرواحنا</span><h2>صدقة جارية على أرواح</h2><div class="names">${names.map(n=>`<span>${n}</span>`).join('')}</div><p>اللهم اغفر لهم وارحمهم، واجعل قبورهم روضةً من رياض الجنة.</p></div></section>
 <section class="section"><div class="section-title"><div><span class="eyebrow">لحظات تقرّبك إلى الله</span><h2>رفيقك في رحلة الطمأنينة</h2></div><span class="muted">خيرٌ يتجدد كل يوم</span></div><div class="feature-grid">${[['quran','book','القرآن الكريم','اقرأ سور القرآن، واستمع وتابع وردك.'],['azkar','azkar','أذكارك اليومية','أذكار مأثورة ترافق يومك وليلتك.'],['dua','dua','الدعاء حياة','أدعية من القرآن ولمن سكنوا قلوبنا.'],['tasbih','tasbih','المسبحة الإلكترونية','لحظة هدوء، وذكرٌ يطمئن به قلبك.']].map(([p,i,t,d])=>`<button class="feature" data-page="${p}"><span class="feature-icon">${icons[i]}</span><h3>${t}</h3><p>${d}</p><span class="feature-link">${p==='quran'?'تصفح المصحف':'ابدأ الآن'}</span></button>`).join('')}</div></section>
 <section class="quote"><span>✦</span><p>رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ</p><small>سورة إبراهيم · الآية ٤١</small></section>`;}
-async function loadQuran(){if(quran)return quran;if(loading)return loading;loading=(async()=>{const cached=read('quran-uthmani-v1',null);if(validateQuran(cached)){quran=cached;return quran;}for(const host of ['https://api.alquran.cloud','https://alquran.api.islamic.network']){try{const r=await fetch(`${host}/v1/quran/quran-uthmani`,{signal:AbortSignal.timeout(18000)});if(!r.ok)throw Error();const data=(await r.json()).data?.surahs;if(!validateQuran(data))throw Error();quran=data;save('quran-uthmani-v1',quran);return quran;}catch{}}throw Error('تعذّر تحميل القرآن. تأكد من اتصال الإنترنت وأعد المحاولة.');})();try{return await loading;}finally{loading=null;}}
+const textCacheName = 'quran-uthmani-text-v1';
+const textKey = new URL('./offline-quran.json', document.baseURI).href;
+function offlineStatus(message) {
+  document.querySelector('#quran-offline').textContent = message;
+}
+async function prepareQuran() {
+  let cache;
+  try {
+    cache = await caches.open(textCacheName);
+    const stored = await cache.match(textKey);
+    if (stored) {
+      const chapters = await stored.json();
+      if (validateQuran(chapters)) {
+        quran = chapters;
+        reportSaved();
+        return chapters;
+      }
+    }
+  } catch { /* Reading online remains available when device storage is restricted. */ }
+  let chapters = read('quran-uthmani-v1', null);
+  if (!validateQuran(chapters)) {
+    offlineStatus('جارٍ تنزيل المصحف كاملًا للقراءة دون إنترنت…');
+    for (const host of ['https://api.alquran.cloud','https://alquran.api.islamic.network']) {
+      try {
+        const response = await fetch(host + '/v1/quran/quran-uthmani', {signal:AbortSignal.timeout(30000)});
+        if (!response.ok) continue;
+        const candidate = (await response.json()).data?.surahs;
+        if (validateQuran(candidate)) { chapters = candidate; break; }
+      } catch { /* Try the second Quran endpoint. */ }
+    }
+    if (!validateQuran(chapters)) {
+      const message = 'لم يكتمل تنزيل المصحف. اتصل بالإنترنت ثم افتح فهرس السور لإعادة المحاولة.';
+      offlineStatus(message);
+      throw Error(message);
+    }
+  }
+  quran = chapters;
+  try {
+    if (!cache) throw Error();
+    await cache.put(textKey, new Response(JSON.stringify(chapters), {headers:{'Content-Type':'application/json'}}));
+    reportSaved();
+  } catch {
+    if (save('quran-uthmani-v1', chapters)) reportSaved();
+    else offlineStatus('المصحف مفتوح الآن، لكن تعذّر حفظه على الجهاز. تحقق من مساحة التخزين ثم أعد فتح التطبيق.');
+  }
+  return chapters;
+}
+function reportSaved() {
+  offlineStatus('تم حفظ نص المصحف كاملًا على هذا الجهاز.');
+  if ('serviceWorker' in navigator) navigator.serviceWorker.ready.then(() => {
+    offlineStatus('المصحف كاملًا جاهز للقراءة دون إنترنت.');
+  });
+}
+async function loadQuran() {
+  if (quran) return quran;
+  if (!loading) loading = prepareQuran().finally(() => { loading = null; });
+  return loading;
+}
+
 function route(p){location.hash=p;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)route(b.dataset.page);});
 async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
@@ -109,3 +167,6 @@ window.addEventListener('hashchange', () => {
   }
 });
 render();
+
+loadQuran().catch(() => {});
+window.addEventListener('online', () => loadQuran().catch(() => {}));
