@@ -29,7 +29,7 @@ function familyPlayer(reading) {
 
 function familyReadingsPage() {
   return heading('تلاوات جدي', 'من صلاته بالناس، رحمه الله.') + familyReadings.map(reading =>
-    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}<a class="text-link" href="#quran/${reading.surah === 2 ? 1 : reading.surah}/${reading.first}">اقرأ في المصحف</a></section>`
+    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}<a class="text-link" href="#recitations/${reading.surah}">اقرأ في المصحف</a></section>`
   ).join('');
 }
 
@@ -99,7 +99,35 @@ async function loadQuran() {
 
 function route(p){location.hash=p;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)route(b.dataset.page);});
-async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla','recitations'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='recitations'?familyReadingsPage():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<section class="content-card"><h2>دعاء بصوت جدي</h2><p>من دعائه في الصلاة · ٣:٤٥</p><button class="secondary" data-recording="grandfather-dua.mp3" data-title="دعاء في الصلاة">استمع للدعاء ▷</button></section><label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
+function showPassage(reading, index) {
+  const pages = new Map();
+  for (const chapter of quran) {
+    const fatiha = reading.surah === 2 && chapter.number === 1;
+    if (!fatiha && chapter.number !== reading.surah) continue;
+    for (const verse of chapter.ayahs) {
+      if (!fatiha && (verse.numberInSurah < reading.first || verse.numberInSurah > reading.last)) continue;
+      if (!pages.has(verse.page)) pages.set(verse.page, []);
+      pages.get(verse.page).push({chapter, verse});
+    }
+  }
+  const segments = [...pages.values()];
+  const position = Math.max(0, Math.min(Number.isInteger(index) ? index : 0, segments.length - 1));
+  const verses = segments[position];
+  const step = (i, label) => segments[i] ? `<a class="secondary" href="#recitations/${reading.surah}/${i}">${label}</a>` : '<span></span>';
+  $('#main').innerHTML = `<section class="reader"><h1>${esc(verses[0].chapter.name)}</h1>${familyPlayer(reading)}
+    <p style="font:${font}px/2.15 Amiri,serif">${verses.map(({verse}) => esc(verse.text) + ' ﴿' + num(verse.numberInSurah) + '﴾').join(' ')}</p></section>
+    <div class="reader-nav">${step(position-1,'الصفحة السابقة')}${step(position+1,'الصفحة التالية')}</div>`;
+}
+
+$('#go-back').onclick = () => {
+  if (history.state?.appBack) history.back();
+  else route(location.hash.startsWith('#recitations/') ? 'recitations' : 'home');
+};
+window.addEventListener('hashchange', event => {
+  if (history.state === null && new URL(event.oldURL).origin === location.origin) history.replaceState({appBack:true}, '');
+});
+
+async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';$('.back-row').hidden=page==='home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla','recitations'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='recitations'?familyReadingsPage():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<section class="content-card"><h2>دعاء بصوت جدي</h2><p>من دعائه في الصلاة · ٣:٤٥</p><button class="secondary" data-recording="grandfather-dua.mp3" data-title="دعاء في الصلاة">استمع للدعاء ▷</button></section><label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});const reading = page==='recitations' && familyReadings.find(r=>r.surah===Number(parts[1]));if(reading){const hash=location.hash;try{await loadQuran();if(location.hash===hash)showPassage(reading,Number(parts[2]));}catch(error){if(location.hash===hash)$('#main').innerHTML='<p role="alert">'+esc(error.message)+'</p><button class="secondary" id="retry">إعادة المحاولة</button>';if(location.hash===hash)$('#retry').onclick=render;}return;}if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
 function showIndex(){$('#main').innerHTML=heading('القرآن الكريم','١١٤ سورة · بالرسم العثماني')+`${bookmark?`<button class="resume" id="resume">▤ متابعة القراءة من ${esc(bookmark.name)} · الآية ${num(bookmark.ayah)}</button>`:''}<label class="search"><span>⌕</span><input id="search" type="search" placeholder="ابحث باسم السورة أو رقمها…" aria-label="ابحث باسم السورة أو رقمها"></label><div id="surahs" class="surah-grid"></div>`;if(bookmark)$('#resume').onclick=()=>route(`quran/${bookmark.surah}/${bookmark.ayah}`);const draw=()=>{const query=normalize($('#search').value.trim());const filtered=quran.filter(s=>normalize(s.name).includes(query)||String(s.number)===query||num(s.number)===query);$('#surahs').innerHTML=filtered.length?filtered.map(s=>`<a class="surah-card" href="#quran/${s.number}"><span class="surah-number">${num(s.number)}</span><div><h3>${esc(s.name)}</h3><small>${s.revelationType==='Meccan'?'مكية':'مدنية'} · ${num(s.ayahs.length)} آية</small></div><span class="muted">جزء ${num(s.ayahs[0].juz)}</span></a>`).join(''):'<p class="empty">لا توجد سورة بهذا الاسم أو الرقم.</p>';};$('#search').oninput=draw;draw();}
 function showSurah(n, target) {
   const surah = quran[n - 1];

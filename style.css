@@ -52,3 +52,11 @@ body:has(#player:not([hidden])) footer { margin-bottom:145px; }
 #install-help::backdrop { background:#081c16aa }
 #install-app { min-height:32px; padding:4px 14px; margin-bottom:6px }
 #install-app[hidden] {display:none}
+
+.dhikr .count {padding:0;gap:2px;line-height:1.2}
+.dhikr .count strong {font-size:20px;line-height:1.2}
+.dhikr .count span {font-size:12px;line-height:1.35;white-space:nowrap}
+.hero h1 {line-height:1.8}
+.content-card + .content-card {margin-block-start:18px}
+.content-card + .dua-filter {margin-block-start:24px}
+.back-row {width:min(1120px,92%);margin:16px auto}
