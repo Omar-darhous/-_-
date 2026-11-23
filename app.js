@@ -24,7 +24,7 @@ const familyReadings = [
 ];
 
 function familyPlayer(reading) {
-  return `<p>${reading.description}</p><audio controls preload="none" style="width:100%" aria-label="تلاوة جدي من ${reading.title}" src="./${reading.file}"></audio>`;
+  return `<p>${reading.description}</p><button class="secondary" data-recording="${reading.file}" data-title="${reading.title}">استمع بصوت جدي ▷</button>`;
 }
 
 function familyReadingsPage() {
@@ -99,7 +99,7 @@ async function loadQuran() {
 
 function route(p){location.hash=p;}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-page]');if(b)route(b.dataset.page);});
-async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla','recitations'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='recitations'?familyReadingsPage():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<section class="content-card"><h2>دعاء بصوت جدي</h2><p>من دعائه في الصلاة · ٣:٤٥</p><audio controls preload="none" style="width:100%" aria-label="دعاء جدي في الصلاة" src="./grandfather-dua.mp3"></audio></section><label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
+async function render(){const parts=location.hash.slice(1).split('/');page=parts[0]||'home';if(!['home','quran','azkar','dua','tasbih','prayer','qibla','recitations'].includes(page))page='home';document.querySelectorAll('nav button').forEach(b=>{b.classList.toggle('active',b.dataset.page===page);b.setAttribute('aria-current',b.dataset.page===page?'page':'false');});$('#main').innerHTML=page==='home'?home():page==='recitations'?familyReadingsPage():page==='quran'?heading('القرآن الكريم','كلام الله، نورٌ يهدي القلوب.')+'<div class="empty" role="status">جارٍ تحميل المصحف الكريم…</div>':page==='dua'?heading('الدعاء حياة','اللهم تقبّل دعاءنا، وارحم أحبتنا.')+`<section class="content-card"><h2>دعاء بصوت جدي</h2><p>من دعائه في الصلاة · ٣:٤٥</p><button class="secondary" data-recording="grandfather-dua.mp3" data-title="دعاء في الصلاة">استمع للدعاء ▷</button></section><label class="dua-filter">موضوع الدعاء <select id="dua-topic"><option value="">كل الأدعية</option>${[...new Set(duas.map(d=>d.topic))].map(t=>'<option>'+t+'</option>').join('')}</select></label><div id="dua-results">${duaCards(duas)}</div>`:page==='azkar'?azkarView():page==='prayer'?prayerView():page==='qibla'?qiblaView():tasbihView();window.scrollTo({top:0});if(page==='quran'){const currentHash=location.hash;try{await loadQuran();if(location.hash!==currentHash)return;const s=Number(parts[1]);if(s>=1&&s<=114){showSurah(s,Number(parts[2])||0);}else showIndex();}catch(e){if(location.hash===currentHash){$('#main').innerHTML=heading('القرآن الكريم','')+`<div class="empty"><p>${esc(e.message)}</p><button class="primary" id="retry">إعادة المحاولة</button></div>`;$('#retry').onclick=render;}}}if(page==='dua') $('#dua-topic').onchange = event => { const topic = event.target.value; $('#dua-results').innerHTML = duaCards(topic ? duas.filter(d => d.topic === topic) : duas); };if(page==='azkar')bindAzkar();if(page==='tasbih')bindTasbih();if(page==='prayer')bindPrayer();if(page==='qibla')bindQibla();}
 function showIndex(){$('#main').innerHTML=heading('القرآن الكريم','١١٤ سورة · بالرسم العثماني')+`${bookmark?`<button class="resume" id="resume">▤ متابعة القراءة من ${esc(bookmark.name)} · الآية ${num(bookmark.ayah)}</button>`:''}<label class="search"><span>⌕</span><input id="search" type="search" placeholder="ابحث باسم السورة أو رقمها…" aria-label="ابحث باسم السورة أو رقمها"></label><div id="surahs" class="surah-grid"></div>`;if(bookmark)$('#resume').onclick=()=>route(`quran/${bookmark.surah}/${bookmark.ayah}`);const draw=()=>{const query=normalize($('#search').value.trim());const filtered=quran.filter(s=>normalize(s.name).includes(query)||String(s.number)===query||num(s.number)===query);$('#surahs').innerHTML=filtered.length?filtered.map(s=>`<a class="surah-card" href="#quran/${s.number}"><span class="surah-number">${num(s.number)}</span><div><h3>${esc(s.name)}</h3><small>${s.revelationType==='Meccan'?'مكية':'مدنية'} · ${num(s.ayahs.length)} آية</small></div><span class="muted">جزء ${num(s.ayahs[0].juz)}</span></a>`).join(''):'<p class="empty">لا توجد سورة بهذا الاسم أو الرقم.</p>';};$('#search').oninput=draw;draw();}
 function showSurah(n, target) {
   const surah = quran[n - 1];
@@ -144,16 +144,26 @@ function showSurah(n, target) {
   if (target > 1) document.getElementById('verse-'+n+'-'+target)?.scrollIntoView({block:'center'});
 }
 function play(number) {
+  playTrack('https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/' + number + '.mp3', quran[number - 1].name, 'مشاري راشد العفاسي');
+}
+
+document.addEventListener('click', event => {
+  const button = event.target.closest('[data-recording]');
+  if (button) playTrack('./' + button.dataset.recording, button.dataset.title, 'بصوت جدي');
+});
+
+function playTrack(source, title, reciter) {
   const audio = $('#audio');
   $('#player').hidden = false;
   $('#audio-error').textContent = '';
-  $('#audio-title').textContent = quran[number - 1].name;
-  if (playing !== number) {
-    playing = number;
-    audio.src = 'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/' + number + '.mp3';
+  $('#audio-title').textContent = title;
+  $('#player small').textContent = reciter;
+  if (playing !== source) {
+    playing = source;
+    audio.src = source;
   }
   audio.play().catch(error => {
-    if (error.name !== 'AbortError' && playing === number) $('#audio-error').textContent = 'تعذّر تشغيل السورة. تحقّق من الاتصال وأعد المحاولة.';
+    if (error.name !== 'AbortError' && playing === source) $('#audio-error').textContent = 'تعذّر تشغيل التسجيل. تحقّق من الاتصال وأعد المحاولة.';
   });
 }
 
