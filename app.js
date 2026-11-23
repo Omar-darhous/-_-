@@ -19,7 +19,7 @@ $('#theme').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'
 function toast(s){$('#toast').textContent=s;$('#toast').classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('#toast').classList.remove('show'),3000);}
 const icons={book:'▤',azkar:'☼',dua:'♡',tasbih:'◉'};
 const familyReadings = [
-  {surah: 2, first: 1, last: 28, title: 'سورة البقرة', description: 'الفاتحة ثم سورة البقرة من الآية ١ إلى الآية ٢٨', file: 'grandfather-recitation.mp3'},
+  {surah: 2, first: 1, last: 28, title: 'سورة الفاتحة ثم سورة البقرة', description: 'الفاتحة ثم سورة البقرة من الآية ١ إلى الآية ٢٨', file: 'grandfather-recitation.mp3'},
   {surah: 27, first: 61, last: 66, title: 'سورة النمل', description: 'من الآية ٦١ إلى الآية ٦٦', file: 'grandfather-naml.mp3'}
 ];
 
@@ -29,14 +29,14 @@ function familyPlayer(reading) {
 
 function familyReadingsPage() {
   return heading('تلاوات جدي', 'من صلاته بالناس، رحمه الله.') + familyReadings.map(reading =>
-    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}<a class="text-link" href="#quran/${reading.surah}/${reading.first}">اقرأ المقطع في المصحف</a></section>`
+    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}${reading.surah === 2 ? '<a class="text-link" href="#quran/1/1">اقرأ سورة الفاتحة</a> · ' : ''}<a class="text-link" href="#quran/${reading.surah}/${reading.first}">اقرأ المقطع في المصحف</a></section>`
   ).join('');
 }
 
 function heading(title,sub){return `<div class="page-heading"><span class="eyebrow">وَاذْكُر رَّبَّكَ كَثِيرًا</span><h1>${title}</h1><p>${sub}</p></div>`;}
 function home(){return `<section class="hero"><div class="hero-copy"><span class="eyebrow">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</span><h1>نورٌ لقلوبنا<br><em>وأجرٌ لمن نحب</em></h1><p>مساحة للقرآن والذكر والدعاء، نهدي أجرها لأحبتنا<br>الذين رحلوا، وبقي حبهم ودعاؤنا لهم.</p><div class="hero-actions"><button class="primary" data-page="quran">ابدأ قراءة القرآن <span>▤</span></button><button class="secondary" data-page="dua">ادعُ لمن تحب</button></div><div class="hero-caption">١١٤ سورة <span>✦</span> تلاوة وذكر <span>✦</span> أثرٌ باقٍ بإذن الله</div></div><div class="arch" aria-hidden="true"><div class="arch-inner"><span class="ornament">۞</span><div class="calligraphy">القرآن<br>الكريم</div><span class="arch-line"></span><p>هُدًى وَرَحْمَةٌ لِّلْمُؤْمِنِينَ</p><small>من سورة يونس · الآية ٥٧</small></div></div></section>
 <section class="dedication"><span class="dedication-symbol">♡</span><div><span class="eyebrow">اللهم ارحم من اشتاقت لهم أرواحنا</span><h2>صدقة جارية على أرواح</h2><div class="names">${names.map(n=>`<span>${n}</span>`).join('')}</div><p>اللهم اغفر لهم وارحمهم، واجعل قبورهم روضةً من رياض الجنة.</p></div></section>
-<section class="content-card" style="margin-top:20px"><h2>تلاوات جدي</h2><a class="secondary" href="#recitations">استمع إلى تلاوتَي البقرة والنمل</a></section><section class="section"><div class="section-title"><div><span class="eyebrow">لحظات تقرّبك إلى الله</span><h2>رفيقك في رحلة الطمأنينة</h2></div><span class="muted">خيرٌ يتجدد كل يوم</span></div><div class="feature-grid">${[['quran','book','القرآن الكريم','اقرأ سور القرآن، واستمع وتابع وردك.'],['azkar','azkar','أذكارك اليومية','أذكار مأثورة ترافق يومك وليلتك.'],['dua','dua','الدعاء حياة','أدعية من القرآن ولمن سكنوا قلوبنا.'],['tasbih','tasbih','المسبحة الإلكترونية','لحظة هدوء، وذكرٌ يطمئن به قلبك.']].map(([p,i,t,d])=>`<button class="feature" data-page="${p}"><span class="feature-icon">${icons[i]}</span><h3>${t}</h3><p>${d}</p><span class="feature-link">${p==='quran'?'تصفح المصحف':'ابدأ الآن'}</span></button>`).join('')}</div></section>
+<section class="content-card" style="margin-top:20px"><h2>تلاوات جدي</h2><a class="secondary" href="#recitations">استمع إلى الفاتحة والبقرة والنمل</a></section><section class="section"><div class="section-title"><div><span class="eyebrow">لحظات تقرّبك إلى الله</span><h2>رفيقك في رحلة الطمأنينة</h2></div><span class="muted">خيرٌ يتجدد كل يوم</span></div><div class="feature-grid">${[['quran','book','القرآن الكريم','اقرأ سور القرآن، واستمع وتابع وردك.'],['azkar','azkar','أذكارك اليومية','أذكار مأثورة ترافق يومك وليلتك.'],['dua','dua','الدعاء حياة','أدعية من القرآن ولمن سكنوا قلوبنا.'],['tasbih','tasbih','المسبحة الإلكترونية','لحظة هدوء، وذكرٌ يطمئن به قلبك.']].map(([p,i,t,d])=>`<button class="feature" data-page="${p}"><span class="feature-icon">${icons[i]}</span><h3>${t}</h3><p>${d}</p><span class="feature-link">${p==='quran'?'تصفح المصحف':'ابدأ الآن'}</span></button>`).join('')}</div></section>
 <section class="quote"><span>✦</span><p>رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ</p><small>سورة إبراهيم · الآية ٤١</small></section>`;}
 const textCacheName = 'quran-uthmani-text-v1';
 const textKey = new URL('./offline-quran.json', document.baseURI).href;
@@ -123,7 +123,7 @@ function showSurah(n, target) {
     <div class="section-title"><small>الجزء ${num(current.juz)}</small><small>صفحة ${num(page)}</small></div>
     ${sections.map(({chapter, verses}) => `<section><div class="surah-title"><h2>${esc(chapter.name)}</h2>
       <button class="secondary" data-listen="${chapter.number}">استماع للسورة كاملة ▷</button></div>
-      ${familyReadings.filter(r => r.surah === chapter.number && verses.some(v => v.numberInSurah >= r.first && v.numberInSurah <= r.last)).map(r => `<aside class="content-card"><strong>تلاوة جدي</strong>${familyPlayer(r)}</aside>`).join('')}
+      ${familyReadings.filter(r => (chapter.number === 1 && r.surah === 2) || r.surah === chapter.number && verses.some(v => v.numberInSurah >= r.first && v.numberInSurah <= r.last)).map(r => `<aside class="content-card"><strong>تلاوة جدي</strong>${familyPlayer(r)}</aside>`).join('')}
       <p style="font:var(--quran-size)/2.15 Amiri,'Traditional Arabic',serif;text-align:justify">
       ${verses.map(a => `<span id="verse-${chapter.number}-${a.numberInSurah}">${esc(a.text)} <span class="verse-number">﴿${num(a.numberInSurah)}﴾</span></span>`).join(' ')}
       </p></section>`).join('')}
