@@ -32,7 +32,20 @@ button.onclick = async () => {
 };
 document.querySelector('#close-install').onclick = () => help.close();
 if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('./sw.js').catch(() => {
+  let controlled = Boolean(navigator.serviceWorker.controller);
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (controlled) location.reload();
+    controlled = true;
+  });
+  navigator.serviceWorker.register('./sw.js', {updateViaCache: 'none'}).then(registration => {
+    const check = () => {
+      if (!document.hidden && navigator.onLine) registration.update().catch(() => {});
+    };
+    check();
+    document.addEventListener('visibilitychange', check);
+    window.addEventListener('pageshow', check);
+    window.addEventListener('online', check);
+  }).catch(() => {
     document.querySelector('#offline-note').textContent = 'تعذّر تجهيز القراءة دون اتصال في هذا المتصفح.';
   });
 }

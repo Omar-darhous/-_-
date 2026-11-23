@@ -29,7 +29,7 @@ function familyPlayer(reading) {
 
 function familyReadingsPage() {
   return heading('تلاوات جدي', 'من صلاته بالناس، رحمه الله.') + familyReadings.map(reading =>
-    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}${reading.surah === 2 ? '<a class="text-link" href="#quran/1/1">اقرأ سورة الفاتحة</a> · ' : ''}<a class="text-link" href="#quran/${reading.surah}/${reading.first}">اقرأ المقطع في المصحف</a></section>`
+    `<section class="content-card"><h2>${reading.title}</h2>${familyPlayer(reading)}<a class="text-link" href="#quran/${reading.surah === 2 ? 1 : reading.surah}/${reading.first}">اقرأ في المصحف</a></section>`
   ).join('');
 }
 
